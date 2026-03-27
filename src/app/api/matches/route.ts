@@ -1,0 +1,15 @@
+import { NextResponse } from "next/server";
+import { getStore } from "@/lib/store";
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const modeId = searchParams.get("modeId");
+  if (!modeId) {
+    return NextResponse.json({ error: "modeId required" }, { status: 400 });
+  }
+  const store = getStore();
+  const matches = await store.matches(modeId);
+  // Map scheduledAt to startsAt for Android app compatibility
+  const withStartsAt = matches.map((m) => ({ ...m, startsAt: m.scheduledAt }));
+  return NextResponse.json(withStartsAt);
+}
