@@ -530,8 +530,9 @@ export const db = {
   async games(adminId?: string): Promise<{ id: string; name: string; imageUrl: string | null }[]> {
     const supabase = getSupabase();
     if (!supabase) return [];
-    let q = supabase.from("games").select("id, name, image_url").order("display_order").order("created_at");
-    const { data } = await q;
+    const q = supabase.from("games").select("id, name, image_url").order("display_order").order("created_at");
+    const { data, error } = await q;
+    if (error) return [];
     let list = (data ?? []).map((r) => ({ id: r.id, name: r.name, imageUrl: r.image_url ?? null }));
     if (adminId) {
       const admin = await db.getAdminById(adminId);

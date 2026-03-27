@@ -17,7 +17,7 @@ type CarouselGame = {
 };
 
 async function fetchGames(): Promise<{ id: string; name: string; imageUrl: string | null }[]> {
-  const res = await fetch("/api/games", { credentials: "include", cache: "no-store" });
+  const res = await fetch(`/api/games?_cb=${Date.now()}`, { credentials: "include", cache: "no-store" });
   const data = await res.json().catch(() => []);
   if (!res.ok || !Array.isArray(data)) return [];
   return data;
@@ -101,26 +101,38 @@ function brandGamesToCarousel(): CarouselGame[] {
   }));
 }
 
-export function GamesSection() {
-  const [games, setGames] = useState<CarouselGame[]>(brandGamesToCarousel);
+function mapApiGamesToCarousel(
+  apiGames: { id: string; name: string; imageUrl: string | null }[],
+): CarouselGame[] {
+  return apiGames.map((g) => ({
+    key: g.id,
+    name: g.name,
+    imageUrl: g.imageUrl,
+  }));
+}
+
+export type GamesSectionProps = {
+  /** From server render — avoids stale client /api/games cache overwriting fresh data */
+  serverGames?: { id: string; name: string; imageUrl: string | null }[];
+};
+
+export function GamesSection({ serverGames }: GamesSectionProps = {}) {
+  const [games, setGames] = useState<CarouselGame[]>(() =>
+    serverGames && serverGames.length > 0 ? mapApiGamesToCarousel(serverGames) : brandGamesToCarousel(),
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
+    if (serverGames && serverGames.length > 0) return;
     fetchGames()
       .then((apiGames) => {
         if (apiGames.length > 0) {
-          setGames(
-            apiGames.map((g) => ({
-              key: g.id,
-              name: g.name,
-              imageUrl: g.imageUrl,
-            })),
-          );
+          setGames(mapApiGamesToCarousel(apiGames));
         }
       })
       .catch(() => {});
-  }, []);
+  }, [serverGames]);
 
   const updateActiveIndex = useCallback(() => {
     const el = scrollRef.current;

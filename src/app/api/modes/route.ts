@@ -1,3 +1,4 @@
+import { unstable_noStore } from "next/cache";
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/store";
 
@@ -9,6 +10,7 @@ const NO_STORE = {
 } as const;
 
 export async function GET(request: Request) {
+  unstable_noStore();
   const { searchParams } = new URL(request.url);
   const modeId = searchParams.get("modeId");
   if (modeId) {

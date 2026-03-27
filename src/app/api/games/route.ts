@@ -1,3 +1,4 @@
+import { unstable_noStore } from "next/cache";
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/store";
 
@@ -10,6 +11,7 @@ const NO_STORE = {
 } as const;
 
 export async function GET() {
+  unstable_noStore();
   const store = getStore();
   const games = await store.games();
   return NextResponse.json(games, { headers: NO_STORE });

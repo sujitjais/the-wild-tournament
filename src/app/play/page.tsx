@@ -57,7 +57,9 @@ function setStoredUser(user: User | null) {
 }
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const isGet = !options?.method || options.method === "GET";
+  const bust = isGet && !path.includes("_cb=") ? `${path.includes("?") ? "&" : "?"}_cb=${Date.now()}` : "";
+  const res = await fetch(`${path}${bust}`, {
     ...options,
     credentials: "include",
     cache: "no-store",
