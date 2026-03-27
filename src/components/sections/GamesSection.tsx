@@ -17,7 +17,7 @@ type CarouselGame = {
 };
 
 async function fetchGames(): Promise<{ id: string; name: string; imageUrl: string | null }[]> {
-  const res = await fetch("/api/games", { credentials: "include" });
+  const res = await fetch("/api/games", { credentials: "include", cache: "no-store" });
   const data = await res.json().catch(() => []);
   if (!res.ok || !Array.isArray(data)) return [];
   return data;

@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/store";
 
+/** Always read from DB — do not freeze the list at build time */
+export const dynamic = "force-dynamic";
+
+const NO_STORE = {
+  "Cache-Control": "no-store, no-cache, must-revalidate",
+  Pragma: "no-cache",
+} as const;
+
 export async function GET() {
   const store = getStore();
   const games = await store.games();
-  return NextResponse.json(games);
+  return NextResponse.json(games, { headers: NO_STORE });
 }
