@@ -752,6 +752,15 @@ function CoinsTab({ user, onRefreshUser, onShowToast, initialSubTab }: { user: U
   const depositAmountNum = parseInt(depositAmount, 10);
   const canProceedToPayment = !isNaN(depositAmountNum) && depositAmountNum > 0;
 
+  const withdrawAmountNum = parseInt(amount, 10);
+  const withdrawAmountValid = !isNaN(withdrawAmountNum) && withdrawAmountNum > 0;
+  const receiveAfterCharge =
+    withdrawAmountValid && withdrawalCharge > 0
+      ? Math.round(withdrawAmountNum * (1 - withdrawalCharge / 100))
+      : withdrawAmountValid
+        ? withdrawAmountNum
+        : null;
+
   const handleProceedToPayment = () => {
     if (!canProceedToPayment) return;
     router.push(`/play/deposit?amount=${depositAmountNum}`);
@@ -834,13 +843,31 @@ function CoinsTab({ user, onRefreshUser, onShowToast, initialSubTab }: { user: U
         {subTab === "withdraw" && (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <h3 className="font-medium text-white">Withdraw Coins</h3>
-            {withdrawalCharge > 0 && <p className="mt-2 text-sm text-[#94A3B8]">Charge: {withdrawalCharge}%</p>}
+            <p className="mt-2 text-sm text-[#94A3B8]">
+              {withdrawalCharge > 0
+                ? `A ${withdrawalCharge}% fee applies. The amount you enter is deducted from your balance; the box below shows what you receive after the fee.`
+                : "No withdrawal fee. The amount you enter is deducted from your balance and paid out in full."}
+            </p>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Amount (coins)"
+              type="number"
+              min={1}
               className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-[#64748B]"
             />
+            {receiveAfterCharge !== null && (
+              <div className="mt-3 rounded-xl border border-[#f97316]/25 bg-[#f97316]/10 px-4 py-3">
+                <p className="text-xs text-[#94A3B8]">You will receive (after fee)</p>
+                <p className="mt-1 text-lg font-semibold text-[#f97316]">{receiveAfterCharge} coins</p>
+                {withdrawalCharge > 0 && withdrawAmountValid && (
+                  <p className="mt-2 text-xs text-[#64748B]">
+                    {withdrawAmountNum} coins deducted from balance · {withdrawalCharge}% fee (
+                    {Math.round((withdrawAmountNum * withdrawalCharge) / 100)} coins)
+                  </p>
+                )}
+              </div>
+            )}
             <input
               value={upiId}
               onChange={(e) => setUpiId(e.target.value)}
