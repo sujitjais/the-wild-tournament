@@ -515,7 +515,8 @@ export const db = {
   async getCustomerSupportUrl(): Promise<string | null> {
     const supabase = getSupabase();
     if (!supabase) return null;
-    const { data } = await supabase.from("app_settings").select("value").eq("key", "customer_support_url").single();
+    const { data, error } = await supabase.from("app_settings").select("value").eq("key", "customer_support_url").maybeSingle();
+    if (error) return null;
     const v = data?.value?.trim();
     return v || null;
   },

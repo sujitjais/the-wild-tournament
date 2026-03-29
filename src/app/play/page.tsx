@@ -112,7 +112,10 @@ function PlayPageContent() {
   const [supportUrl, setSupportUrl] = useState<string | null>(null);
   const fetchSupportUrl = useCallback(() => {
     api<{ url?: string | null }>("/api/customer-support")
-      .then((r) => setSupportUrl(r.url || null))
+      .then((r) => {
+        const u = r.url;
+        setSupportUrl(typeof u === "string" && u.trim() ? u.trim() : null);
+      })
       .catch(() => setSupportUrl(null));
   }, []);
   useEffect(() => {
@@ -123,6 +126,9 @@ function PlayPageContent() {
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [fetchSupportUrl]);
+  useEffect(() => {
+    if (user) fetchSupportUrl();
+  }, [user, fetchSupportUrl]);
   useEffect(() => {
     const toastParam = searchParams.get("toast");
     if (toastParam === "deposit_success") {
