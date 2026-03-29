@@ -843,11 +843,9 @@ function CoinsTab({ user, onRefreshUser, onShowToast, initialSubTab }: { user: U
         {subTab === "withdraw" && (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <h3 className="font-medium text-white">Withdraw Coins</h3>
-            <p className="mt-2 text-sm text-[#94A3B8]">
-              {withdrawalCharge > 0
-                ? `A ${withdrawalCharge}% fee applies. The amount you enter is deducted from your balance; the box below shows what you receive after the fee.`
-                : "No withdrawal fee. The amount you enter is deducted from your balance and paid out in full."}
-            </p>
+            {withdrawalCharge > 0 && (
+              <p className="mt-2 text-sm text-[#94A3B8]">Fee: {withdrawalCharge}%</p>
+            )}
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
