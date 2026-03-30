@@ -503,8 +503,10 @@ export const db = {
   async getDepositQrUrl(): Promise<string | null> {
     const supabase = getSupabase();
     if (!supabase) return null;
-    const { data } = await supabase.from("app_settings").select("value").eq("key", "deposit_qr_url").single();
-    return data?.value ?? null;
+    const { data, error } = await supabase.from("app_settings").select("value").eq("key", "deposit_qr_url").maybeSingle();
+    if (error) return null;
+    const v = data?.value?.trim();
+    return v || null;
   },
 
   async setDepositQrUrl(url: string | null): Promise<string | null> {

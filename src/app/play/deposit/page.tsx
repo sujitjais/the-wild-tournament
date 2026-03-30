@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -19,9 +19,15 @@ function getStoredUser(): User | null {
 }
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const isGet = !options?.method || options.method === "GET";
+  const bust =
+    isGet && !path.includes("_cb=")
+      ? `${path.includes("?") ? "&" : "?"}_cb=${Date.now()}`
+      : "";
+  const res = await fetch(`${path}${bust}`, {
     ...options,
     credentials: "include",
+    cache: "no-store",
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
   const data = await res.json().catch(() => ({}));
@@ -60,12 +66,27 @@ function DepositPaymentPageContent() {
       .catch(() => {});
   }, [router]);
 
-  useEffect(() => {
+  const fetchDepositQr = useCallback(() => {
     api<{ url?: string }>("/api/deposit-qr")
-      .then((r) => r.url ?? null)
-      .then(setDepositQr)
+      .then((r) => {
+        const u = r.url;
+        setDepositQr(typeof u === "string" && u.trim() ? u.trim() : null);
+      })
       .catch(() => setDepositQr(null));
   }, []);
+
+  useEffect(() => {
+    fetchDepositQr();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchDepositQr();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [fetchDepositQr]);
+
+  useEffect(() => {
+    if (user) fetchDepositQr();
+  }, [user, fetchDepositQr]);
 
   const handleSubmit = async () => {
     if (!user || !isValidAmount || !utr.trim()) {
