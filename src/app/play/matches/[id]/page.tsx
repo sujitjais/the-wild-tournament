@@ -102,6 +102,13 @@ function MatchTypeTag({ type }: { type: string }) {
   );
 }
 
+function teammateSlotsNeeded(matchType: string | undefined): number {
+  const t = (matchType || "solo").toLowerCase();
+  if (t === "duo") return 1;
+  if (t === "squad") return 3;
+  return 0;
+}
+
 function computeCoinsWon(
   p: Participant,
   cpk: number,
@@ -134,6 +141,12 @@ function MatchDetailContent() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [inGameName, setInGameName] = useState("");
   const [inGameUid, setInGameUid] = useState("");
+  /** Extra players after captain: index 0 = player 2, 1 = player 3, 2 = player 4 (squad) */
+  const [teammates, setTeammates] = useState([
+    { name: "", uid: "" },
+    { name: "", uid: "" },
+    { name: "", uid: "" },
+  ]);
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [hasJoinedOverride, setHasJoinedOverride] = useState(false);
@@ -221,9 +234,21 @@ function MatchDetailContent() {
     (user && participants.some((p) => String(p.userId) === String(user.id))) || hasJoinedOverride;
 
   const handleJoin = async () => {
+    if (!match) return;
     if (!inGameName.trim() || !inGameUid.trim()) {
-      setJoinError("Enter in-game name and UID");
+      setJoinError("Enter in-game name and UID for player 1 (captain)");
       return;
+    }
+    const need = teammateSlotsNeeded(match.matchType);
+    const teamPayload: { inGameName: string; inGameUid: string }[] = [];
+    for (let i = 0; i < need; i++) {
+      const nm = teammates[i].name.trim();
+      const uid = teammates[i].uid.trim();
+      if (!nm || !uid) {
+        setJoinError(`Enter in-game name and UID for player ${i + 2}`);
+        return;
+      }
+      teamPayload.push({ inGameName: nm, inGameUid: uid });
     }
     setJoinLoading(true);
     setJoinError(null);
@@ -233,10 +258,16 @@ function MatchDetailContent() {
         body: JSON.stringify({
           inGameName: inGameName.trim(),
           inGameUid: inGameUid.trim(),
+          ...(teamPayload.length > 0 ? { teamMembers: teamPayload } : {}),
         }),
       });
       setInGameName("");
       setInGameUid("");
+      setTeammates([
+        { name: "", uid: "" },
+        { name: "", uid: "" },
+        { name: "", uid: "" },
+      ]);
       setHasJoinedOverride(true);
       if (user?.id && id) setStoredJoined(id, user.id, true);
       refreshUser();
@@ -249,6 +280,11 @@ function MatchDetailContent() {
       if (msg.toLowerCase().includes("already registered")) {
         setInGameName("");
         setInGameUid("");
+        setTeammates([
+          { name: "", uid: "" },
+          { name: "", uid: "" },
+          { name: "", uid: "" },
+        ]);
         setHasJoinedOverride(true);
         if (user?.id && id) setStoredJoined(id, user.id, true);
         await Promise.all([
@@ -435,12 +471,19 @@ function MatchDetailContent() {
         {canJoin && (
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
             <h2 className="text-lg font-semibold text-white">Join Match</h2>
-            <p className="mt-1 text-sm text-[#94A3B8]">Enter your in-game details</p>
+            <p className="mt-1 text-sm text-[#94A3B8]">
+              {(match.matchType || "solo").toLowerCase() === "solo" && "Enter your in-game name and UID."}
+              {(match.matchType || "").toLowerCase() === "duo" &&
+                "Duo: enter you as captain (player 1) and your teammate (player 2)."}
+              {(match.matchType || "").toLowerCase() === "squad" &&
+                "Squad: enter all four players — you as captain (player 1) and three teammates."}
+            </p>
+            <p className="mt-4 text-xs font-medium uppercase tracking-wider text-[#64748B]">Player 1 (captain)</p>
             <input
               value={inGameName}
               onChange={(e) => setInGameName(e.target.value)}
-              placeholder="In-game Name"
-              className="mt-4 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
+              placeholder="In-game name"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
             />
             <input
               value={inGameUid}
@@ -448,6 +491,59 @@ function MatchDetailContent() {
               placeholder="In-game UID"
               className="mt-3 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
             />
+            {(match.matchType || "").toLowerCase() === "duo" && (
+              <>
+                <p className="mt-5 text-xs font-medium uppercase tracking-wider text-[#64748B]">Player 2</p>
+                <input
+                  value={teammates[0].name}
+                  onChange={(e) =>
+                    setTeammates((t) => [{ ...t[0], name: e.target.value }, t[1], t[2]])
+                  }
+                  placeholder="In-game name"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
+                />
+                <input
+                  value={teammates[0].uid}
+                  onChange={(e) =>
+                    setTeammates((t) => [{ ...t[0], uid: e.target.value }, t[1], t[2]])
+                  }
+                  placeholder="In-game UID"
+                  className="mt-3 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
+                />
+              </>
+            )}
+            {(match.matchType || "").toLowerCase() === "squad" &&
+              ([2, 3, 4] as const).map((playerNum, slotIdx) => (
+                <div key={playerNum}>
+                  <p className="mt-5 text-xs font-medium uppercase tracking-wider text-[#64748B]">
+                    Player {playerNum}
+                  </p>
+                  <input
+                    value={teammates[slotIdx].name}
+                    onChange={(e) =>
+                      setTeammates((t) => {
+                        const next = [...t] as typeof t;
+                        next[slotIdx] = { ...next[slotIdx], name: e.target.value };
+                        return next;
+                      })
+                    }
+                    placeholder="In-game name"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
+                  />
+                  <input
+                    value={teammates[slotIdx].uid}
+                    onChange={(e) =>
+                      setTeammates((t) => {
+                        const next = [...t] as typeof t;
+                        next[slotIdx] = { ...next[slotIdx], uid: e.target.value };
+                        return next;
+                      })
+                    }
+                    placeholder="In-game UID"
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-[#0c0c0e] px-4 py-3 text-white placeholder-[#64748B] outline-none focus:border-[#f97316]"
+                  />
+                </div>
+              ))}
             {joinError && <p className="mt-2 text-sm text-red-400">{joinError}</p>}
             <button
               onClick={handleJoin}
@@ -513,9 +609,18 @@ function MatchDetailContent() {
                           #{typeof p.rank === "number" ? p.rank : idx + 1}
                         </span>
                       )}
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-white">{p.teamMembers[0]?.inGameName ?? "—"}</p>
-                        <p className="truncate text-xs text-[#94A3B8]">UID: {p.teamMembers[0]?.inGameUid ?? "—"}</p>
+                      <div className="min-w-0 space-y-2">
+                        {(p.teamMembers ?? []).map((tm, ti) => (
+                          <div key={ti}>
+                            {(p.teamMembers ?? []).length > 1 && (
+                              <p className="text-[10px] uppercase tracking-wider text-[#64748B]">
+                                Player {ti + 1}
+                              </p>
+                            )}
+                            <p className="truncate font-medium text-white">{tm.inGameName ?? "—"}</p>
+                            <p className="truncate text-xs text-[#94A3B8]">UID: {tm.inGameUid ?? "—"}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">

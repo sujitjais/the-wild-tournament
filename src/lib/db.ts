@@ -661,10 +661,41 @@ export const db = {
       .order("joined_at", { ascending: true });
     const { data: appParts, error: appPartsError } = await supabase
       .from("app_match_participants")
-      .select("id, match_id, app_user_id, in_game_name, in_game_uid, kills, squad_rank, joined_at")
+      .select(
+        "id, match_id, app_user_id, in_game_name, in_game_uid, kills, squad_rank, joined_at, participant_2_name, participant_2_uid, participant_3_name, participant_3_uid, participant_4_name, participant_4_uid",
+      )
       .eq("match_id", id)
       .order("joined_at", { ascending: true });
     const appPartsSafe = appPartsError ? [] : (appParts ?? []);
+    const appRowToTeamMembers = (p: {
+      in_game_name: string;
+      in_game_uid: string;
+      kills?: number | null;
+      participant_2_name?: string | null;
+      participant_2_uid?: string | null;
+      participant_3_name?: string | null;
+      participant_3_uid?: string | null;
+      participant_4_name?: string | null;
+      participant_4_uid?: string | null;
+    }) => {
+      const leaderKills = p.kills ?? 0;
+      const members: { inGameName: string; inGameUid: string; kills?: number }[] = [
+        { inGameName: p.in_game_name, inGameUid: p.in_game_uid, kills: leaderKills },
+      ];
+      const extras: [string | null | undefined, string | null | undefined][] = [
+        [p.participant_2_name, p.participant_2_uid],
+        [p.participant_3_name, p.participant_3_uid],
+        [p.participant_4_name, p.participant_4_uid],
+      ];
+      for (const [n, u] of extras) {
+        const nn = (n ?? "").trim();
+        const uu = (u ?? "").trim();
+        if (nn && uu) {
+          members.push({ inGameName: nn, inGameUid: uu, kills: 0 });
+        }
+      }
+      return members;
+    };
     const participants = [
       ...(parts ?? []).map((p) => ({
         id: p.id,
@@ -678,7 +709,7 @@ export const db = {
         id: p.id,
         matchId: p.match_id,
         userId: p.app_user_id,
-        teamMembers: [{ inGameName: p.in_game_name, inGameUid: p.in_game_uid, kills: (p as { kills?: number }).kills ?? 0 }],
+        teamMembers: appRowToTeamMembers(p),
         joinedAt: p.joined_at,
         rank: (p as { squad_rank?: number }).squad_rank ?? undefined,
       })),
