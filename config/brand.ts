@@ -115,7 +115,7 @@ export const brand = {
   /** Footer */
   footer: {
     links: [
-      { label: "About", href: "#" },
+      { label: "About", href: "https://www.instagram.com/53756a6974?igsh=d2syZmhoZXh2aXY2" },
       { label: "Terms & Conditions", href: "#" },
       { label: "Privacy Policy", href: "#" },
       { label: "Blogs", href: "#" },
