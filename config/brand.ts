@@ -25,8 +25,8 @@ export const brand = {
 
   /** Social links - shown in navbar and footer. Set to "" to hide. */
   social: {
-    instagram: "https://instagram.com",
-    youtube: "https://youtube.com",
+    instagram: "https://www.instagram.com/wild_tournaments?igsh=MWhucmlpZ2NtbG41eA==",
+    youtube: "https://youtube.com/@rgb_esports?si=dmHfvDhk0CQkJOvv",
   },
 
   /** Image paths - place files in website/public/images/ */
