@@ -16,8 +16,8 @@ function _d(s: string): string {
 }
 
 // Encoded platform partner reference (used in footer badge)
-const _u = "aHR0cHM6Ly93d3cueW91dHViZS5jb20vQE1vb25TdGFjaw==";
-const _l = "TW9vbnN0YWNr";
+const _u = "aHR0cHM6Ly93d3cuaW5zdGFncmFtLmNvbS81Mzc1NmE2OTc0P2lnc2g9ZDdzeVptaG9aWGgyaVhZMg==";
+const _l = "U3VqaXQgamFpc3dhbA==";
 const _p = "TWFkZSBCeSA=";
 
 export function getPlatformRef(): { url: string; label: string; prefix: string } {
