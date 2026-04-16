@@ -21,7 +21,7 @@
 
 export const brand = {
   /** App name - used in navbar, footer, and all /play pages */
-  appName: "XYZ Esports",
+  appName: "The Wild Tournament",
 
   /** Social links - shown in navbar and footer. Set to "" to hide. */
   social: {
